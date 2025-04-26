@@ -97,14 +97,44 @@ def send_telegram(msg):
         logging.error(f"Ошибка при отправке сообщения в Telegram: {e}")
 
 def main():
-    """Основная функция для проверки новых новостей и отправки уведомлений."""
     last_title, last_date = load_last()
     latest_title, latest_date, latest_content = fetch_latest()
     
     if latest_title and latest_date and latest_content:
         if latest_title != last_title or latest_date != last_date:
-            msg = f"Новая новость на сайте TLSContact:\n{latest_title}\nДата: {latest_date}\n\nСодержание:\n{latest_content}\n\nСайт TLSContact:\nhttps://it.tlscontact.com/by/msq/page.php?pid=news"
+            # Определяем фиксированные части сообщения
+            prefix = f"Новая новость на сайте TLSContact:\n{latest_title}\nДата: {latest_date}\n\nСодержание:\n"
+            suffix = "\n\nСайт TLSContact:\nhttps://it.tlscontact.com/by/msq/page.php?pid=news"
+            
+            # Рассчитываем общую фиксированную длину
+            total_fixed = len(prefix) + len(suffix)
+            max_length = 4096
+            available_for_content = max_length - total_fixed
+            
+            # Обрабатываем укорачивание
+            if available_for_content < 0:
+                # Это маловероятно, но обрабатываем случай, когда даже фиксированные части превышают лимит
+                msg = prefix + suffix[:max(0, max_length - len(prefix))]
+                logging.warning("Сообщение слишком длинное даже без содержания, укорачиваем.")
+            else:
+                indicator = " [...]"
+                if len(latest_content) > available_for_content - len(indicator):
+                    # Укорачиваем содержание и добавляем индикатор
+                    content_length = available_for_content - len(indicator)
+                    if content_length > 0:
+                        content_to_send = latest_content[:content_length] + indicator
+                    else:
+                        content_to_send = indicator[:available_for_content]
+                else:
+                    content_to_send = latest_content
+                
+                # Формируем финальное сообщение
+                msg = prefix + content_to_send + suffix
+            
+            # Отправляем сообщение
             send_telegram(msg)
+            
+            # Сохраняем новое состояние
             save_last(latest_title, latest_date)
         else:
             logging.info("Новых новостей нет.")
