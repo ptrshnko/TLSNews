@@ -55,13 +55,19 @@ def fetch_latest():
         title = title_elem.text.strip() if title_elem else "Заголовок не найден"
         logging.info(f"Найден заголовок новости: {title}")
         
-        # Найти все <p> после контейнера новости до следующего контейнера
+        # Найти следующий контейнер новости (если есть)
+        if len(news_starters) > 1:
+            next_starter = news_starters[1]
+        else:
+            next_starter = None
+        
+        # Найти все <p> после текущего контейнера до следующего контейнера
         p_siblings = []
-        for sib in latest_starter.next_siblings:
-            if sib.name == "div" and "d-flex py-4 align-items-start align-items-md-baseline mt-4" in sib.get("class", []):
-                break
-            if sib.name == "p" and sib.get("class") == ["px-0"] and sib.get("align") == "justify":
-                p_siblings.append(sib)
+        current = latest_starter.find_next_sibling()
+        while current and (next_starter is None or current != next_starter):
+            if current.name == "p" and current.get("class") == ["px-0"] and current.get("align") == "justify":
+                p_siblings.append(current)
+            current = current.find_next_sibling()
         
         if p_siblings:
             # Первый <p> — дата
