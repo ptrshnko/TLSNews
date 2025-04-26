@@ -86,7 +86,7 @@ def main():
         logging.warning("Не удалось получить данные новости, уведомление не отправлено.")
         return
     if latest_title != last:
-        msg = f"Новая новость на сайте TLSContact:\n{latest_title}\nДата: {latest_date}"
+        msg = f"Новая новость на сайте TLSContact:\n{latest_title}\nДата: {latest_date} \nСайт TLSContact:\nhttps://it.tlscontact.com/by/msq/page.php?pid=news"
         send_telegram(msg)
         save_last(latest_title)
     else:
