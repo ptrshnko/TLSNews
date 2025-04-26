@@ -24,9 +24,16 @@ def fetch_latest():
     r = requests.get(URL, timeout=15)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
+    
+    # Отладка: посмотри какие заголовки вообще есть
+    print(soup.prettify())
+    
     h3 = soup.select_one("h3.mb-0")
-    if not h3 or "RELEASE OF SLOTS" not in h3.text.upper():
+    if not h3:
+        print("❌ h3.mb-0 не найден")
         return None, None
+    print(f"✅ Найден заголовок: {h3.text.strip()}")
+    
     title = h3.text.strip()
     date_u = soup.select_one("p strong u")
     date_str = date_u.text.strip() if date_u else ""
@@ -35,6 +42,7 @@ def fetch_latest():
     except:
         dt = date_str
     return title, dt
+
 
 def send_telegram(msg):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
