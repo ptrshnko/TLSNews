@@ -1,0 +1,44 @@
+name: TLScontact Slot Monitor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'           # каждые 10 минут
+  workflow_dispatch:                # ручной запуск из UI
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo 🛎️
+        uses: actions/checkout@v3     # автоматически клонирует код :contentReference[oaicite:0]{index=0}
+
+      - name: Cache state file 💾
+        uses: actions/cache@v3        # действие для кэширования :contentReference[oaicite:1]{index=1}
+        id: cache-state
+        with:
+          path: last_release.txt      # что кэшируем
+          key: state-${{ runner.os }}-${{ hashFiles('check_slots.py') }}
+          restore-keys: |
+            state-${{ runner.os }}-   # fallback на любой state для этой ОС
+
+      - name: Set up Python 🐍
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'       # настраивает интерпретатор :contentReference[oaicite:2]{index=2}
+
+      - name: Install dependencies 📦
+        run: pip install -r requirements.txt
+
+      - name: Run slot monitor ⏱️
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python check_slots.py
+
+      - name: Save updated state ⚙️
+        if: steps.cache-state.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: last-release
+          path: last_release.txt
