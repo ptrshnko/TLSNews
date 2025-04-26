@@ -34,7 +34,11 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add last_release.txt
-          git diff --staged --quiet || git commit -m "Update last_release.txt with latest news"
-          git push
+          if ! git diff --staged --quiet; then
+            git commit -m "Update last_release.txt with latest news"
+            git push
+          else
+            echo "No changes to commit."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
